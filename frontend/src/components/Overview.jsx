@@ -1,5 +1,4 @@
 // spotify-dashboard/src/components/Overview.js
-import React from "react";
 import {
   Typography,
   Grid,
@@ -27,11 +26,12 @@ import {
   Bar,
   ResponsiveContainer,
 } from "recharts";
-import { driversData, constructorsData, performanceData } from "../data/f1Data";
+import { performanceData } from "../data/f1Data";
+import React, { useState, useEffect } from "react";
+import f1Service from "../services/f1Service";
 import TeamWinsPieChart from "./TeamWinsPieChart";
 import QualifyingLapChart from "./QualifyingLapChart";
 import { useTheme } from "@mui/material/styles";
-
 const COLORS = [
   "#E10600",
   "#1E5BC6",
@@ -41,9 +41,53 @@ const COLORS = [
   "#469BFF",
 ];
 
+
 const Overview = () => {
   const theme = useTheme();
 
+  const [drivers, setDrivers] = useState([]);
+  const [constructors, setConstructors] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  const fetchData = async () => {
+  try {
+    const constructorsRes =
+      await f1Service.getConstructorsChampionship(2024);
+
+    const driversRes =
+      await f1Service.getDriversChampionship(2024);
+
+    console.log("Constructors:", constructorsRes);
+    console.log("Drivers:", driversRes);
+
+    setConstructors(constructorsRes.data);
+    setDrivers(driversRes.data);
+  } catch (err) {
+    console.error(err);
+  } finally {
+    setLoading(false);
+  }
+};
+
+  useEffect(() => {
+    fetchData();
+}, []);
+if (loading) {
+  return <Typography>Loading...</Typography>;
+}
+const totalPoints = constructors.reduce(
+  (sum, c) => sum + Number(c.points),
+  0
+);
+
+const totalWins = constructors.reduce(
+  (sum, c) => sum + Number(c.wins),
+  0
+);
+
+const totalTeams = constructors.length;
+
+const totalDrivers = drivers.length;
   return (
     <Box>
       <Typography variant="h4" gutterBottom>
@@ -56,7 +100,7 @@ const Overview = () => {
           <Paper sx={{ p: 2, bgcolor: "background.paper" }}>
             <Typography variant="h6">Points</Typography>
             <Typography variant="h3" color="primary">
-              46.26K
+              {totalPoints.toLocaleString()}
             </Typography>
           </Paper>
         </Grid>
@@ -70,9 +114,9 @@ const Overview = () => {
         </Grid>
         <Grid item xs={12} md={6} lg={3}>
           <Paper sx={{ p: 2, bgcolor: "background.paper" }}>
-            <Typography variant="h6">Number of Races</Typography>
+            <Typography variant="h6">Teams</Typography>
             <Typography variant="h3" color="primary">
-              25.40K
+              {totalTeams.toLocaleString()}
             </Typography>
           </Paper>
         </Grid>
@@ -80,7 +124,7 @@ const Overview = () => {
           <Paper sx={{ p: 2, bgcolor: "background.paper" }}>
             <Typography variant="h6">Total Wins</Typography>
             <Typography variant="h3" color="primary">
-              655
+              {totalWins.toLocaleString()}
             </Typography>
           </Paper>
         </Grid>
@@ -95,7 +139,13 @@ const Overview = () => {
               Constructor Total Points
             </Typography>
             <ResponsiveContainer width="100%" height={300}>
-              <BarChart data={constructorsData}>
+              <BarChart
+                  data={constructors.map((c) => ({
+                      name: c.teamId?.teamName || "Unknown",
+                      points: c.points,
+                      wins: c.wins,
+                  }))}
+              >
                 <CartesianGrid strokeDasharray="3 3" />
                 <XAxis dataKey="name" />
                 <YAxis />
@@ -190,15 +240,15 @@ const Overview = () => {
                   </TableRow>
                 </TableHead>
                 <TableBody>
-                  {driversData.map((driver) => (
-                    <TableRow key={`${driver.name}-${driver.surname}`}>
-                      <TableCell>{driver.name}</TableCell>
-                      <TableCell>{driver.surname}</TableCell>
-                      <TableCell>{driver.nationality}</TableCell>
-                      <TableCell align="right">{driver.points}</TableCell>
-                      <TableCell>{driver.constructor}</TableCell>
-                    </TableRow>
-                  ))}
+                    {drivers.map((driver) => (
+                        <TableRow key={driver._id}>
+                            <TableCell>{driver.driverId?.name}</TableCell>
+                            <TableCell>{driver.driverId?.surname}</TableCell>
+                            <TableCell>{driver.driverId?.nationality}</TableCell>
+                            <TableCell align="right">{driver.points}</TableCell>
+                            <TableCell>{driver.teamId?.teamName}</TableCell>
+                        </TableRow>
+                    ))}
                 </TableBody>
               </Table>
             </TableContainer>

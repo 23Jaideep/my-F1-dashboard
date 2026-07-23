@@ -4,7 +4,7 @@ const f1Controller = require("../controllers/f1Controller");
 const auth = require("../middleware/auth");
 
 // All routes require authentication
-router.use(auth);
+// router.use(auth);
 
 // Insert initial F1 data
 router.post("/initial-data", f1Controller.insertInitialData);

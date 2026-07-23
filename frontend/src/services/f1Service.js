@@ -1,6 +1,6 @@
 import axios from "axios";
 
-const API_URL = "http://localhost:3000/api/f1";
+const API_URL = "http://localhost:5000/api/f1";
 
 // Add request interceptor for logging
 axios.interceptors.request.use(
@@ -31,93 +31,22 @@ axios.interceptors.response.use(
 const f1Service = {
   // Insert initial F1 data
   async insertInitialData(season) {
-    try {
-      const response = await axios.post(`${API_URL}/insert-data`, { season });
-      console.log("Insert data response:", response.data);
-      return response.data;
-    } catch (error) {
-      console.error(
-        "Error inserting F1 data:",
-        error.response?.data || error.message
-      );
-      throw new Error(
-        error.response?.data?.message || "Failed to insert F1 data"
-      );
-    }
-  },
+    return (await axios.post(`${API_URL}/initial-data`, { season })).data;
+},
 
-  // Get Constructors Championship
-  async getConstructorsChampionship(year) {
-    try {
-      const response = await axios.get(
-        `${API_URL}/${year}/constructors-championship`
-      );
-      console.log("Constructors championship response:", response.data);
-      if (!response.data || response.data.status !== "success") {
-        throw new Error(
-          response.data?.message || "Failed to fetch constructors championship"
-        );
-      }
-      return response.data;
-    } catch (error) {
-      console.error(
-        "Error fetching constructors championship:",
-        error.response?.data || error.message
-      );
-      throw new Error(
-        error.response?.data?.message ||
-          "Failed to fetch constructors championship"
-      );
-    }
-  },
+async getConstructorsChampionship(year) {
+    return (await axios.get(`${API_URL}/constructors/${year}`)).data;
+},
 
-  // Get Drivers Championship
-  async getDriversChampionship(year) {
-    try {
-      const response = await axios.get(
-        `${API_URL}/${year}/drivers-championship`
-      );
-      console.log("Drivers championship response:", response.data);
-      if (!response.data || response.data.status !== "success") {
-        throw new Error(
-          response.data?.message || "Failed to fetch drivers championship"
-        );
-      }
-      return response.data;
-    } catch (error) {
-      console.error(
-        "Error fetching drivers championship:",
-        error.response?.data || error.message
-      );
-      throw new Error(
-        error.response?.data?.message || "Failed to fetch drivers championship"
-      );
-    }
-  },
+async getDriversChampionship(year) {
+    return (await axios.get(`${API_URL}/drivers/${year}`)).data;
+},
 
-  // Get Practice Session Results
-  async getPracticeSession(year, round, session) {
-    try {
-      const response = await axios.get(
-        `${API_URL}/${year}/${round}/${session}`
-      );
-      console.log("Practice session response:", response.data);
-      if (!response.data || response.data.status !== "success") {
-        throw new Error(
-          response.data?.message || "Failed to fetch practice session"
-        );
-      }
-      return response.data;
-    } catch (error) {
-      console.error(
-        "Error fetching practice session:",
-        error.response?.data || error.message
-      );
-      throw new Error(
-        error.response?.data?.message || "Failed to fetch practice session"
-      );
-    }
-  },
+async getPracticeSession(year, round, session) {
+    return (
+        await axios.get(`${API_URL}/practice/${year}/${round}/${session}`)
+    ).data;
+}
 };
 
 export default f1Service;
