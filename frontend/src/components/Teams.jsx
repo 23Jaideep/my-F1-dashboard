@@ -69,7 +69,13 @@ if (error) {
       {/* Teams Overview Cards */}
       <Grid container spacing={3} sx={{ mb: 4 }}>
         {constructors.map((team) => (
-          <Grid item xs={12} md={6} lg={4} key={team.teamId?._id || team.teamId?.teamId}>
+  <Grid
+    item
+    xs={12}
+    md={6}
+    lg={4}
+    key={team.teamId?._id || team.teamId?.teamId}
+  >
             <Paper sx={{ p: 2, bgcolor: "background.paper" }}>
               <Typography variant="h6" gutterBottom>
                 {team.teamId?.teamName}
@@ -122,8 +128,8 @@ if (error) {
                 </Table>
               </TableContainer>
             </Paper>
-          </Grid>
-        ))}
+                  </Grid>
+))}
       </Grid>
 
       {/* Team Statistics Table */}

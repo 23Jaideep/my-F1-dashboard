@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import {
   Typography,
   Box,
@@ -26,66 +26,59 @@ import {
   Legend,
   ResponsiveContainer,
 } from "recharts";
-import { constructorsData, driversData } from "../data/f1Data";
+import f1Service from "../services/f1Service";
 import QualifyingLapChart from "./QualifyingLapChart";
 
 // Mock data for races (you can replace this with real data)
-const racesData = [
-  {
-    id: 1,
-    name: "Australian Grand Prix",
-    date: "2024-03-24",
-    location: "Melbourne, Australia",
-    circuit: "Albert Park Circuit",
-    winner: "Max Verstappen",
-    team: "Red Bull",
-    laps: 58,
-    status: "Completed",
-  },
-  {
-    id: 2,
-    name: "Saudi Arabian Grand Prix",
-    date: "2024-03-09",
-    location: "Jeddah, Saudi Arabia",
-    circuit: "Jeddah Corniche Circuit",
-    winner: "Max Verstappen",
-    team: "Red Bull",
-    laps: 50,
-    status: "Completed",
-  },
-  {
-    id: 3,
-    name: "Bahrain Grand Prix",
-    date: "2024-03-02",
-    location: "Sakhir, Bahrain",
-    circuit: "Bahrain International Circuit",
-    winner: "Max Verstappen",
-    team: "Red Bull",
-    laps: 57,
-    status: "Completed",
-  },
-];
+
 
 const Races = () => {
+  const [races, setRaces] = useState([]);
+  const [constructors, setConstructors] = useState([]);
+  const [drivers, setDrivers] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   const [selectedTab, setSelectedTab] = React.useState(0);
 
   const handleTabChange = (event, newValue) => {
     setSelectedTab(newValue);
   };
+  useEffect(() => {
+  const fetchData = async () => {
+    try {
+      const racesRes = await f1Service.getRaces(2024);
+      const driversRes = await f1Service.getDriversChampionship(2024);
+      const constructorsRes =
+        await f1Service.getConstructorsChampionship(2024);
 
-  // Calculate driver statistics
-  const driverStats = driversData.map((driver) => ({
-    ...driver,
-    winRate: ((driver.points / 1000) * 100).toFixed(1),
-    avgPoints: (driver.points / 25.4).toFixed(1),
+      setRaces(racesRes.data);
+      setDrivers(driversRes.data);
+      setConstructors(constructorsRes.data);
+    } catch (err) {
+      console.error(err);
+      setError("Failed to load race data.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  fetchData();
+}, []);
+
+  const constructorStats = constructors.map((team) => ({
+    ...team,
+    winRate: ((team.wins / 25.4) * 100).toFixed(1),
+    avgPoints: (team.points / 25.4).toFixed(1),
   }));
 
-  // Calculate constructor statistics
-  const constructorStats = constructorsData.map((constructor) => ({
-    ...constructor,
-    winRate: ((constructor.wins / 25.4) * 100).toFixed(1),
-    avgPoints: (constructor.points / 25.4).toFixed(1),
-  }));
+  if (loading) {
+    return <Typography>Loading...</Typography>;
+  }
+
+  if (error) {
+    return <Typography color="error">{error}</Typography>;
+  }
+  
 
   return (
     <Box>
@@ -161,20 +154,22 @@ const Races = () => {
                 </TableRow>
               </TableHead>
               <TableBody>
-                {racesData.map((race) => (
-                  <TableRow key={race.id}>
-                    <TableCell>{race.name}</TableCell>
+                {races.map((race) => (
+                  <TableRow key={race._id}>
+                    <TableCell>{race.raceName}</TableCell>
+
                     <TableCell>
                       {new Date(race.date).toLocaleDateString()}
                     </TableCell>
-                    <TableCell>{race.location}</TableCell>
-                    <TableCell>{race.circuit}</TableCell>
+
+                    <TableCell>{race.country}</TableCell>
+
+                    <TableCell>{race.circuitName}</TableCell>
+
                     <TableCell>
                       <Chip
-                        label={race.status}
-                        color={
-                          race.status === "Completed" ? "success" : "default"
-                        }
+                        label="Completed"
+                        color="success"
                         size="small"
                       />
                     </TableCell>
@@ -203,13 +198,13 @@ const Races = () => {
                 </TableRow>
               </TableHead>
               <TableBody>
-                {driversData.map((driver, index) => (
-                  <TableRow key={`${driver.name}-${driver.surname}`}>
+                {drivers.map((driver, index) => (
+                  <TableRow key={driver._id}>
                     <TableCell>{index + 1}</TableCell>
                     <TableCell>
-                      {driver.name} {driver.surname}
+                      {driver.driverId?.name} {driver.driverId?.surname}
                     </TableCell>
-                    <TableCell>{driver.constructor}</TableCell>
+                    <TableCell>{driver.teamId?.teamName}</TableCell>
                     <TableCell align="right">{driver.points}</TableCell>
                     <TableCell>+{index * 5}s</TableCell>
                   </TableRow>
@@ -228,7 +223,13 @@ const Races = () => {
                 Team Performance in Races
               </Typography>
               <ResponsiveContainer width="100%" height={300}>
-                <LineChart data={constructorsData}>
+                <LineChart
+                  data={constructors.map((team) => ({
+                    name: team.teamId?.teamName,
+                    points: team.points,
+                    wins: team.wins,
+                  }))}
+                >
                   <CartesianGrid strokeDasharray="3 3" />
                   <XAxis dataKey="name" />
                   <YAxis />
@@ -265,9 +266,9 @@ const Races = () => {
                     </TableRow>
                   </TableHead>
                   <TableBody>
-                    {constructorsData.map((team) => (
-                      <TableRow key={team.name}>
-                        <TableCell>{team.name}</TableCell>
+                    {constructorStats.map((team) => (
+                      <TableRow key={team._id}>
+                        <TableCell>{team.teamId?.teamName}</TableCell>
                         <TableCell align="right">
                           {((team.wins / 25.4) * 100).toFixed(1)}%
                         </TableCell>

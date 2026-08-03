@@ -13,7 +13,7 @@ router.post("/initial-data", f1Controller.insertInitialData);
 
 router.get("/constructors/:year", f1Controller.getConstructorsChampionship);
 // Drivers Championship routes
-
+router.get("/races/:year", f1Controller.getRaces);
 router.get("/drivers/:year", f1Controller.getDriversChampionship);
 // Practice Session routes
 router.get("/practice/:year/:round/:session", f1Controller.getPracticeSession);

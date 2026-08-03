@@ -41,6 +41,9 @@ async getConstructorsChampionship(year) {
 async getDriversChampionship(year) {
     return (await axios.get(`${API_URL}/drivers/${year}`)).data;
 },
+async getRaces(year) {
+    return (await axios.get(`${API_URL}/races/${year}`)).data;
+},
 
 async getPracticeSession(year, round, session) {
     return (

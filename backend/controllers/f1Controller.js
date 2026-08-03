@@ -4,7 +4,7 @@ const Driver = require("../models/Driver");
 const ConstructorsChampionship = require("../models/ConstructorsChampionship");
 const DriversChampionship = require("../models/DriversChampionship");
 const PracticeSession = require("../models/PracticeSession");
-
+const Race = require("../models/Race");
 const F1_API_BASE_URL = "https://f1api.dev/api";
 
 const f1Controller = {
@@ -380,6 +380,69 @@ const f1Controller = {
         }
       }
 
+      // Fetch races data
+console.log("Fetching races data...");
+
+let racesResponse = null;
+
+try {
+  const racesUrl = `${F1_API_BASE_URL}/${season}`;
+  racesResponse = await fetchWithRetry(racesUrl);
+
+  console.log(
+    "Races API Response:",
+    JSON.stringify(racesResponse.data, null, 2)
+  );
+} catch (apiError) {
+  const errorMsg = `Races API failed: ${apiError.message}`;
+  console.error(errorMsg);
+  errors.push(errorMsg);
+}
+
+const racesData = racesResponse
+  ? racesResponse.data.races || []
+  : [];
+
+for (const race of racesData) {
+  try {
+    const driverDoc = await Driver.findOne({
+      driverId: race.winner.driverId,
+    });
+
+    const teamDoc = await Team.findOne({
+      teamId: race.teamWinner.teamId,
+    });
+
+    await Race.findOneAndUpdate(
+      {
+        season,
+        round: race.round,
+      },
+      {
+        season,
+        round: race.round,
+        raceName: race.raceName,
+        circuitName: race.circuit.circuitName,
+        country: race.circuit.country,
+        locality: race.circuit.city,
+        date: race.schedule.race.date,
+        time: race.schedule.race.time,
+        winner: driverDoc?._id,
+        winningTeam: teamDoc?._id,
+        laps: race.laps,
+      },
+      {
+        upsert: true,
+        new: true,
+      }
+    );
+
+    console.log(`Inserted ${race.raceName}`);
+  } catch (err) {
+    console.error(`Error inserting ${race.raceName}`, err.message);
+  }
+}
+
       if (errors.length > 0) {
         res.status(207).json({
           status: "partial success",
@@ -515,6 +578,43 @@ const f1Controller = {
       res.status(500).json({
         status: "error",
         message: "Error fetching practice session data",
+        error: error.message,
+      });
+    }
+  },
+  async getRaces(req, res) {
+    try {
+      const { year } = req.params;
+
+      if (!year) {
+        return res.status(400).json({
+          status: "error",
+          message: "Year is required",
+        });
+      }
+
+      const races = await Race.find({ season: year })
+        .populate("winner", "name surname nationality")
+        .populate("winningTeam", "teamName")
+        .sort({ round: 1 });
+
+      if (!races.length) {
+        return res.status(404).json({
+          status: "error",
+          message: "No races found",
+        });
+      }
+
+      res.json({
+        status: "success",
+        data: races,
+      });
+    } catch (error) {
+      console.error(error);
+
+      res.status(500).json({
+        status: "error",
+        message: "Error fetching races",
         error: error.message,
       });
     }
