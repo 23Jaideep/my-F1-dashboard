@@ -17,8 +17,6 @@ import {
 import {
   LineChart,
   Line,
-  BarChart,
-  Bar,
   XAxis,
   YAxis,
   CartesianGrid,
@@ -71,6 +69,21 @@ const Races = () => {
     avgPoints: (team.points / 25.4).toFixed(1),
   }));
 
+  const totalRaces = races.length;
+
+  const completedRaces = races.filter(
+    (race) => new Date(race.date) < new Date()
+  ).length;
+
+  const upcomingRaces = totalRaces - completedRaces;
+
+  const averageLaps =
+    totalRaces > 0
+      ? (
+          races.reduce((sum, race) => sum + race.laps, 0) / totalRaces
+        ).toFixed(1)
+      : 0;
+
   if (loading) {
     return <Typography>Loading...</Typography>;
   }
@@ -92,7 +105,7 @@ const Races = () => {
           <Paper sx={{ p: 2, bgcolor: "background.paper" }}>
             <Typography variant="h6">Total Races</Typography>
             <Typography variant="h3" color="primary">
-              25.40K
+              {totalRaces}
             </Typography>
           </Paper>
         </Grid>
@@ -100,7 +113,7 @@ const Races = () => {
           <Paper sx={{ p: 2, bgcolor: "background.paper" }}>
             <Typography variant="h6">Races This Season</Typography>
             <Typography variant="h3" color="primary">
-              3
+              {completedRaces}
             </Typography>
           </Paper>
         </Grid>
@@ -108,15 +121,15 @@ const Races = () => {
           <Paper sx={{ p: 2, bgcolor: "background.paper" }}>
             <Typography variant="h6">Upcoming Races</Typography>
             <Typography variant="h3" color="primary">
-              21
+              {upcomingRaces}
             </Typography>
           </Paper>
         </Grid>
         <Grid item xs={12} md={6} lg={3}>
           <Paper sx={{ p: 2, bgcolor: "background.paper" }}>
-            <Typography variant="h6">Average Race Duration</Typography>
+            <Typography variant="h6">Average Laps</Typography>
             <Typography variant="h3" color="primary">
-              1:30:00
+              {averageLaps} Laps
             </Typography>
           </Paper>
         </Grid>

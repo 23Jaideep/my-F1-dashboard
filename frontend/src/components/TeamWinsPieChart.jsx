@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import {
   PieChart,
   Pie,
@@ -8,11 +8,48 @@ import {
   ResponsiveContainer,
 } from "recharts";
 import { Typography, Paper, Box } from "@mui/material";
-import { teamWinsData } from "../data/f1Data";
-
+import f1Service from "../services/f1Service";
 const TeamWinsPieChart = () => {
-  const totalWins = teamWinsData.reduce((sum, team) => sum + team.wins, 0);
+  const [constructors, setConstructors] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const res = await f1Service.getConstructorsChampionship(2024);
+        setConstructors(res.data);
+      } catch (err) {
+        console.error(err);
+        setError("Failed to load team wins.");
+      } finally {
+        setLoading(false);
+      }
+    };
 
+    fetchData();
+  }, []);
+  const chartData = constructors
+    .filter((team) => team.wins > 0)
+    .map((team, index) => ({
+      name: team.teamId?.teamName,
+      wins: team.wins,
+      color: [
+        "#E10600",
+        "#1E5BC6",
+        "#00D2BE",
+        "#FFF200",
+        "#FF8700",
+        "#469BFF",
+        "#9C27B0",
+        "#4CAF50",
+        "#795548",
+        "#607D8B",
+      ][index % 10],
+    }));
+  const totalWins = chartData.reduce(
+    (sum, team) => sum + team.wins,
+    0
+  );
   const CustomTooltip = ({ active, payload }) => {
     if (active && payload && payload.length) {
       const data = payload[0].payload;
@@ -27,6 +64,14 @@ const TeamWinsPieChart = () => {
     return null;
   };
 
+  if (loading) {
+    return <Typography>Loading...</Typography>;
+  }
+
+  if (error) {
+    return <Typography color="error">{error}</Typography>;
+  }
+
   return (
     <Box>
       <Typography variant="h6" gutterBottom>
@@ -35,20 +80,21 @@ const TeamWinsPieChart = () => {
       <ResponsiveContainer width="100%" height={300}>
         <PieChart>
           <Pie
-            data={teamWinsData}
+            data={chartData}
             dataKey="wins"
             nameKey="name"
             cx="50%"
             cy="50%"
             outerRadius={100}
             label={({ name, wins }) => `${name}: ${wins}`}
+            labelLine={true}
             isAnimationActive={true}
             animationBegin={0}
             animationDuration={1500}
             animationEasing="ease-out"
             style={{ outline: "none" }}
           >
-            {teamWinsData.map((entry, index) => (
+            {chartData.map((entry, index) => (
               <Cell
                 key={`cell-${index}`}
                 fill={entry.color}
