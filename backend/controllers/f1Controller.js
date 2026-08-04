@@ -6,7 +6,7 @@ const DriversChampionship = require("../models/DriversChampionship");
 const PracticeSession = require("../models/PracticeSession");
 const Race = require("../models/Race");
 const F1_API_BASE_URL = "https://f1api.dev/api";
-
+const Circuit = require("../models/Circuit");
 const f1Controller = {
   async insertInitialData(req, res) {
     try {
@@ -412,6 +412,29 @@ for (const race of racesData) {
     const teamDoc = await Team.findOne({
       teamId: race.teamWinner.teamId,
     });
+const circuitDoc = await Circuit.findOneAndUpdate(
+  {
+    circuitId: race.circuit.circuitId,
+  },
+  {
+    circuitId: race.circuit.circuitId,
+    circuitName: race.circuit.circuitName,
+    country: race.circuit.country,
+    city: race.circuit.city,
+    circuitLength: race.circuit.circuitLength,
+    lapRecord: race.circuit.lapRecord,
+    firstParticipationYear: race.circuit.firstParticipationYear,
+    corners: race.circuit.corners,
+    fastestLapDriverId: race.circuit.fastestLapDriverId,
+    fastestLapTeamId: race.circuit.fastestLapTeamId,
+    fastestLapYear: race.circuit.fastestLapYear,
+    url: race.circuit.url,
+  },
+  {
+    upsert: true,
+    new: true,
+  }
+);
 
     await Race.findOneAndUpdate(
       {

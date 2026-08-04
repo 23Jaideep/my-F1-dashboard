@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { Typography, Paper } from "@mui/material";
 import {
   PieChart,
@@ -8,47 +8,46 @@ import {
   Tooltip,
   Legend,
 } from "recharts";
-
+import f1Service from "../services/f1Service";
 const QualifyingLapChart = () => {
+  const [laps, setLaps] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const res = await f1Service.getPracticeSession(2024, 1, "fp1");
+        setLaps(res.data);
+      } catch (err) {
+        console.error(err);
+        setError("Failed to load qualifying data.");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchData();
+  }, []);
   // Convert lap times to seconds for easier comparison
   const convertTimeToSeconds = (timeStr) => {
-    const [minutes, seconds, milliseconds] = timeStr.split(":").map(Number);
-    return minutes * 60 + seconds + milliseconds / 1000;
+    const [minutes, seconds] = timeStr.split(":");
+    return Number(minutes) * 60 + Number(seconds);
   };
 
-  // Sample data from the API response
-  const data = [
-    {
-      name: "Max Verstappen",
-      value: convertTimeToSeconds("1:29:179"),
-      team: "Red Bull Racing",
-      color: "#0600EF",
-    },
-    {
-      name: "Charles Leclerc",
-      value: convertTimeToSeconds("1:29:407"),
-      team: "Ferrari",
-      color: "#DC0000",
-    },
-    {
-      name: "George Russell",
-      value: convertTimeToSeconds("1:29:485"),
-      team: "Mercedes",
-      color: "#00D2BE",
-    },
-    {
-      name: "Carlos Sainz",
-      value: convertTimeToSeconds("1:29:507"),
-      team: "Ferrari",
-      color: "#DC0000",
-    },
-    {
-      name: "Sergio Pérez",
-      value: convertTimeToSeconds("1:29:537"),
-      team: "Red Bull Racing",
-      color: "#0600EF",
-    },
-  ];
+  const data = laps
+  .slice(0, 5)
+  .map((lap, index) => ({
+    name: `${lap.driverId?.name} ${lap.driverId?.surname}`,
+    value: convertTimeToSeconds(lap.time),
+    team: lap.teamId?.teamName,
+    color: [
+      "#0600EF",
+      "#DC0000",
+      "#00D2BE",
+      "#FF8700",
+      "#469BFF",
+    ][index % 5],
+  }));
 
   const CustomTooltip = ({ active, payload }) => {
     if (active && payload && payload.length) {
@@ -67,11 +66,17 @@ const QualifyingLapChart = () => {
     }
     return null;
   };
+  if (loading) {
+    return <Typography>Loading...</Typography>;
+  }
 
+  if (error) {
+    return <Typography color="error">{error}</Typography>;
+  }
   return (
     <>
       <Typography variant="h6" gutterBottom>
-        Top 5 Qualifying Lap Times
+        FP1 Lap Times
       </Typography>
       <ResponsiveContainer width="100%" height={300}>
         <PieChart>

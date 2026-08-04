@@ -62,14 +62,18 @@ const Races = () => {
 
   fetchData();
 }, []);
-
+  const totalRaces = races.length;
   const constructorStats = constructors.map((team) => ({
     ...team,
-    winRate: ((team.wins / 25.4) * 100).toFixed(1),
-    avgPoints: (team.points / 25.4).toFixed(1),
+    winRate:
+  totalRaces > 0
+    ? ((team.wins / totalRaces) * 100).toFixed(1)
+    : 0,
+    avgPoints:
+  totalRaces > 0
+    ? (team.points / totalRaces).toFixed(1)
+    : 0,
   }));
-
-  const totalRaces = races.length;
 
   const completedRaces = races.filter(
     (race) => new Date(race.date) < new Date()
@@ -283,10 +287,10 @@ const Races = () => {
                       <TableRow key={team._id}>
                         <TableCell>{team.teamId?.teamName}</TableCell>
                         <TableCell align="right">
-                          {((team.wins / 25.4) * 100).toFixed(1)}%
+                          {team.winRate}%
                         </TableCell>
                         <TableCell align="right">
-                          {(team.points / 25.4).toFixed(1)}
+                          {team.avgPoints}
                         </TableCell>
                       </TableRow>
                     ))}
