@@ -7,6 +7,7 @@ const PracticeSession = require("../models/PracticeSession");
 const Race = require("../models/Race");
 const F1_API_BASE_URL = "https://f1api.dev/api";
 const Circuit = require("../models/Circuit");
+const redisClient = require("../config/redis");
 const f1Controller = {
   async insertInitialData(req, res) {
     try {
@@ -16,7 +17,6 @@ const f1Controller = {
           .status(400)
           .json({ status: "error", message: "Season is required" });
       }
-      console.log(`Fetching F1 data for season ${season}...`);
 
       const errors = [];
 
@@ -37,7 +37,6 @@ const f1Controller = {
       };
 
       // Fetch teams data
-      console.log("Fetching teams data...");
       let teamsResponse = null;
       try {
         teamsResponse = await fetchWithRetry(`${F1_API_BASE_URL}/teams`);
@@ -71,7 +70,6 @@ const f1Controller = {
             },
             { upsert: true, new: true }
           );
-          console.log(`Team ${team.name} updated successfully`);
         } catch (teamError) {
           console.error(
             `Error updating team ${team.name || team.id}:`,
@@ -128,7 +126,6 @@ const f1Controller = {
       }
 
       // Fetch constructors championship data
-      console.log("Fetching constructors championship data...");
       let constructorsResponse = null;
       try {
         const constructorsUrl = `${F1_API_BASE_URL}/${season}/constructors-championship?limit=10&offset=0`;
@@ -505,6 +502,18 @@ const circuitDoc = await Circuit.findOneAndUpdate(
   async getConstructorsChampionship(req, res) {
     try {
       const { year } = req.params;
+      const cacheKey = `constructors:${year}`;
+      const cachedData = await redisClient.get(cacheKey);
+      if (cachedData) {
+        console.log("✅ Cache HIT");
+
+        return res.json({
+          status: "success",
+          data: JSON.parse(cachedData),
+        });
+      }
+
+      console.log("❌ Cache MISS");
       if (!year) {
         return res
           .status(400)
@@ -531,7 +540,11 @@ const circuitDoc = await Circuit.findOneAndUpdate(
           message: "No constructors championship data found for this year",
         });
       }
-
+      await redisClient.setEx(
+          cacheKey,
+          3600,
+          JSON.stringify(championshipData)
+      );
       res.json({
         status: "success",
         data: championshipData,
@@ -549,6 +562,19 @@ const circuitDoc = await Circuit.findOneAndUpdate(
   async getDriversChampionship(req, res) {
     try {
       const { year } = req.params;
+      const cacheKey = `drivers:${year}`;
+      const cachedData = await redisClient.get(cacheKey);
+
+      if (cachedData) {
+          console.log("✅ Driver Cache HIT");
+
+          return res.json({
+              status: "success",
+              data: JSON.parse(cachedData),
+          });
+      }
+
+      console.log("❌ Driver Cache MISS");
       if (!year)
         return res
           .status(400)
@@ -557,6 +583,11 @@ const circuitDoc = await Circuit.findOneAndUpdate(
         .populate("driverId", "name surname nationality")
         .populate("teamId", "teamName")
         .sort({ position: 1 });
+        await redisClient.setEx(
+        cacheKey,
+        3600,
+        JSON.stringify(championshipData)
+    );
       if (!championshipData.length)
         return res
           .status(404)
@@ -579,6 +610,20 @@ const circuitDoc = await Circuit.findOneAndUpdate(
   async getPracticeSession(req, res) {
     try {
       const { year, round, session } = req.params;
+      const cacheKey = `practice:${year}:${round}:${session}`;
+
+const cachedData = await redisClient.get(cacheKey);
+
+if (cachedData) {
+  console.log("✅ Practice Cache HIT");
+
+  return res.json({
+    status: "success",
+    data: JSON.parse(cachedData),
+  });
+}
+
+console.log("❌ Practice Cache MISS");
       if (!year || !round || !session) {
         return res.status(400).json({
           status: "error",
@@ -605,7 +650,11 @@ const circuitDoc = await Circuit.findOneAndUpdate(
             "No practice session data found for the specified parameters",
         });
       }
-
+      await redisClient.setEx(
+  cacheKey,
+  3600,
+  JSON.stringify(practiceData)
+);
       res.json({
         status: "success",
         data: sessionData,
@@ -622,7 +671,17 @@ const circuitDoc = await Circuit.findOneAndUpdate(
   async getRaces(req, res) {
     try {
       const { year } = req.params;
+      const { season } = req.params;
+const cacheKey = `races:${season}`;
 
+const cached = await redisClient.get(cacheKey);
+
+if (cached) {
+    console.log("✅ Races Cache HIT");
+    return res.json(JSON.parse(cached));
+}
+
+console.log("❌ Races Cache MISS");
       if (!year) {
         return res.status(400).json({
           status: "error",
@@ -641,7 +700,14 @@ const circuitDoc = await Circuit.findOneAndUpdate(
           message: "No races found",
         });
       }
-
+      await redisClient.setEx(
+    cacheKey,
+    3600,
+    JSON.stringify({
+        status: "success",
+        data: races,
+    })
+);
       res.json({
         status: "success",
         data: races,
