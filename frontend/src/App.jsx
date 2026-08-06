@@ -29,6 +29,7 @@ import Teams from "./components/Teams";
 import Races from "./components/Races";
 import Statistics from "./components/Statistics";
 import Dashboard from "./components/Dashboard";
+import RaceReplay from "./pages/RaceReplay";
 import UserAuth from "./components/UserAuth";
 import {
   DRAWER_WIDTH,
@@ -145,6 +146,7 @@ const App = () => {
           >
             <Container maxWidth="xl">
               <Routes>
+                <Route path="/replay" element={<RaceReplay />} />
                 <Route path="/" element={<Overview />} />
                 <Route path="/dashboard" element={<Dashboard />} />
                 <Route path="/races" element={<Races />} />

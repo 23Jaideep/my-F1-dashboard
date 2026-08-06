@@ -33,6 +33,8 @@ import f1Service from "../services/f1Service";
 import TeamWinsPieChart from "./TeamWinsPieChart";
 import QualifyingLapChart from "./QualifyingLapChart";
 import { useTheme } from "@mui/material/styles";
+import socket from "../services/socket";
+console.log("socket =", socket);
 const COLORS = [
   "#E10600",
   "#1E5BC6",
@@ -42,10 +44,18 @@ const COLORS = [
   "#469BFF",
 ];
 
-
 const Overview = () => {
   const theme = useTheme();
   const { season } = useFilter();
+  useEffect(() => {
+  socket.on("connect", () => {
+    console.log("Connected:", socket.id);
+  });
+
+  return () => {
+    socket.off("connect");
+  };
+}, []);
   const [drivers, setDrivers] = useState([]);
   const [constructors, setConstructors] = useState([]);
   const [loading, setLoading] = useState(true);
