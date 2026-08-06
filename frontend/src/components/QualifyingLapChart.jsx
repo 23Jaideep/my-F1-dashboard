@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { Typography, Paper } from "@mui/material";
+import { useFilter } from "../context/FilterContext";
 import {
   PieChart,
   Pie,
@@ -13,21 +14,24 @@ const QualifyingLapChart = () => {
   const [laps, setLaps] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const { season } = useFilter();
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const res = await f1Service.getPracticeSession(2024, 1, "fp1");
+        setLoading(true);
+        setError(null);
+        const res = await f1Service.getPracticeSession(season, 1, "fp1");
         setLaps(res.data);
       } catch (err) {
         console.error(err);
-        setError("Failed to load qualifying data.");
+        setError("Practice session data is not available for this season.");
       } finally {
         setLoading(false);
       }
     };
 
     fetchData();
-  }, []);
+  }, [season]);
   // Convert lap times to seconds for easier comparison
   const convertTimeToSeconds = (timeStr) => {
     const [minutes, seconds] = timeStr.split(":");

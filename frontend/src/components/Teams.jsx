@@ -13,20 +13,21 @@ import {
 } from "@mui/material";
 import React, { useState, useEffect } from "react";
 import f1Service from "../services/f1Service";
-
+import { useFilter} from "../context/FilterContext";
 const Teams = () => {
   const [constructors, setConstructors] = useState([]);
   const [drivers, setDrivers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const { season } = useFilter();
   useEffect(() => {
   const fetchData = async () => {
     try {
       const constructorsRes =
-        await f1Service.getConstructorsChampionship(2024);
+        await f1Service.getConstructorsChampionship(season);
 
       const driversRes =
-        await f1Service.getDriversChampionship(2024);
+        await f1Service.getDriversChampionship(season);
 
       setConstructors(constructorsRes.data);
       setDrivers(driversRes.data);
@@ -39,7 +40,7 @@ const Teams = () => {
   };
 
   fetchData();
-}, []);
+}, [season]);
   // Group drivers by constructor
   const driversByConstructor = drivers.reduce((acc, driver) => {
   const team = driver.teamId?.teamName;

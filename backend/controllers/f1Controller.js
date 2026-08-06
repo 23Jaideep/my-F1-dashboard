@@ -399,19 +399,33 @@ try {
   errors.push(errorMsg);
 }
 
+console.log(
+  "Raw races response:",
+  JSON.stringify(racesResponse.data, null, 2)
+);
+
 const racesData = racesResponse
   ? racesResponse.data.races || []
   : [];
 
+console.log("Number of races:", racesData.length);
+
 for (const race of racesData) {
   try {
-    const driverDoc = await Driver.findOne({
-      driverId: race.winner.driverId,
-    });
+    let driverDoc = null;
+let teamDoc = null;
 
-    const teamDoc = await Team.findOne({
-      teamId: race.teamWinner.teamId,
-    });
+if (race.winner) {
+  driverDoc = await Driver.findOne({
+    driverId: race.winner.driverId,
+  });
+}
+
+if (race.teamWinner) {
+  teamDoc = await Team.findOne({
+    teamId: race.teamWinner.teamId,
+  });
+}
 const circuitDoc = await Circuit.findOneAndUpdate(
   {
     circuitId: race.circuit.circuitId,

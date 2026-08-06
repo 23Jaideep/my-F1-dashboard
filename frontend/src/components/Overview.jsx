@@ -1,4 +1,5 @@
 // spotify-dashboard/src/components/Overview.js
+import { useFilter } from "../context/FilterContext";
 import {
   Typography,
   Grid,
@@ -44,7 +45,7 @@ const COLORS = [
 
 const Overview = () => {
   const theme = useTheme();
-
+  const { season } = useFilter();
   const [drivers, setDrivers] = useState([]);
   const [constructors, setConstructors] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -52,10 +53,10 @@ const Overview = () => {
   const fetchData = async () => {
   try {
     const constructorsRes =
-      await f1Service.getConstructorsChampionship(2024);
+      await f1Service.getConstructorsChampionship(season);
 
     const driversRes =
-      await f1Service.getDriversChampionship(2024);
+      await f1Service.getDriversChampionship(season);
 
     console.log("Constructors:", constructorsRes);
     console.log("Drivers:", driversRes);
@@ -71,7 +72,7 @@ const Overview = () => {
 
   useEffect(() => {
     fetchData();
-}, []);
+}, [season]);
 if (loading) {
   return <Typography>Loading...</Typography>;
 }

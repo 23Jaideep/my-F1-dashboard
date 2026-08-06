@@ -1,4 +1,3 @@
-import React from "react";
 import {
   Typography,
   Box,
@@ -28,7 +27,10 @@ import {
   Pie,
   Cell,
 } from "recharts";
-import { driversData, constructorsData, performanceData } from "../data/f1Data";
+import { performanceData } from "../data/f1Data";
+import React, { useState, useEffect } from "react";
+import { useFilter } from "../context/FilterContext";
+import f1Service from "../services/f1Service";
 import QualifyingLapChart from "./QualifyingLapChart";
 import { useTheme } from "@mui/material/styles";
 
@@ -43,26 +45,85 @@ const COLORS = [
 
 const Statistics = () => {
   const theme = useTheme();
-  const [selectedTab, setSelectedTab] = React.useState(0);
+  const { season } = useFilter();
 
+const [drivers, setDrivers] = useState([]);
+const [constructors, setConstructors] = useState([]);
+const [loading, setLoading] = useState(true);
+  const [selectedTab, setSelectedTab] = React.useState(0);
+const fetchData = async () => {
+  try {
+    setLoading(true);
+
+    const driversRes =
+      await f1Service.getDriversChampionship(season);
+
+    const constructorsRes =
+      await f1Service.getConstructorsChampionship(season);
+
+    setDrivers(driversRes.data);
+    setConstructors(constructorsRes.data);
+  } catch (err) {
+    console.error(err);
+  } finally {
+    setLoading(false);
+  }
+};
+useEffect(() => {
+  fetchData();
+}, [season]);
   const handleTabChange = (event, newValue) => {
     setSelectedTab(newValue);
   };
 
   // Calculate driver statistics
-  const driverStats = driversData.map((driver) => ({
-    ...driver,
-    winRate: ((driver.points / 1000) * 100).toFixed(1),
-    avgPoints: (driver.points / 25.4).toFixed(1),
-  }));
+const totalDriverWins = drivers.reduce(
+  (sum, d) => sum + Number(d.wins),
+  0
+);
 
+  const driverStats = drivers.map((driver) => ({
+    name: driver.driverId?.name,
+    surname: driver.driverId?.surname,
+    points: Number(driver.points),
+    wins: Number(driver.wins),
+    winRate:
+      totalDriverWins === 0
+        ? "0.0"
+        : ((driver.wins / totalDriverWins) * 100).toFixed(1),
+    avgPoints: Number(driver.points).toFixed(1),
+  }));
   // Calculate constructor statistics
-  const constructorStats = constructorsData.map((constructor) => ({
-    ...constructor,
-    winRate: ((constructor.wins / 25.4) * 100).toFixed(1),
-    avgPoints: (constructor.points / 25.4).toFixed(1),
-  }));
+  const totalConstructorWins = constructors.reduce(
+  (sum, c) => sum + Number(c.wins),
+  0
+);
 
+const constructorStats = constructors.map((team) => ({
+  name: team.teamId?.teamName,
+  points: Number(team.points),
+  wins: Number(team.wins),
+  winRate:
+    totalConstructorWins === 0
+      ? "0.0"
+      : ((team.wins / totalConstructorWins) * 100).toFixed(1),
+}));
+  if (loading) {
+  return <Typography>Loading...</Typography>;
+}
+const totalPoints = constructors.reduce(
+  (sum, team) => sum + Number(team.points),
+  0
+);
+
+const totalWins = constructors.reduce(
+  (sum, team) => sum + Number(team.wins),
+  0
+);
+
+const totalDrivers = drivers.length;
+
+const totalTeams = constructors.length;
   return (
     <Box>
       <Typography variant="h4" gutterBottom>
@@ -75,7 +136,7 @@ const Statistics = () => {
           <Paper sx={{ p: 2, bgcolor: "background.paper" }}>
             <Typography variant="h6">Total Points</Typography>
             <Typography variant="h3" color="primary">
-              46.26K
+              {totalPoints.toLocaleString()}
             </Typography>
           </Paper>
         </Grid>
@@ -83,7 +144,7 @@ const Statistics = () => {
           <Paper sx={{ p: 2, bgcolor: "background.paper" }}>
             <Typography variant="h6">Total Wins</Typography>
             <Typography variant="h3" color="primary">
-              655
+              {totalWins}
             </Typography>
           </Paper>
         </Grid>
@@ -91,7 +152,7 @@ const Statistics = () => {
           <Paper sx={{ p: 2, bgcolor: "background.paper" }}>
             <Typography variant="h6">Total Drivers</Typography>
             <Typography variant="h3" color="primary">
-              8
+              {totalDrivers}
             </Typography>
           </Paper>
         </Grid>
@@ -99,7 +160,7 @@ const Statistics = () => {
           <Paper sx={{ p: 2, bgcolor: "background.paper" }}>
             <Typography variant="h6">Total Teams</Typography>
             <Typography variant="h3" color="primary">
-              9
+              {totalTeams}
             </Typography>
           </Paper>
         </Grid>

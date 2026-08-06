@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { useFilter } from "../context/FilterContext";
 import {
   Typography,
   Box,
@@ -37,17 +38,17 @@ const Races = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [selectedTab, setSelectedTab] = React.useState(0);
-
+  const { season } = useFilter();
   const handleTabChange = (event, newValue) => {
     setSelectedTab(newValue);
   };
   useEffect(() => {
   const fetchData = async () => {
     try {
-      const racesRes = await f1Service.getRaces(2024);
-      const driversRes = await f1Service.getDriversChampionship(2024);
+      const racesRes = await f1Service.getRaces(season);
+      const driversRes = await f1Service.getDriversChampionship(season);
       const constructorsRes =
-        await f1Service.getConstructorsChampionship(2024);
+        await f1Service.getConstructorsChampionship(season);
 
       setRaces(racesRes.data);
       setDrivers(driversRes.data);
@@ -61,7 +62,7 @@ const Races = () => {
   };
 
   fetchData();
-}, []);
+}, [season]);
   const totalRaces = races.length;
   const constructorStats = constructors.map((team) => ({
     ...team,

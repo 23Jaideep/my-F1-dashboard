@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { useFilter } from "../context/FilterContext";
 import {
   PieChart,
   Pie,
@@ -13,10 +14,11 @@ const TeamWinsPieChart = () => {
   const [constructors, setConstructors] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const { season } = useFilter();
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const res = await f1Service.getConstructorsChampionship(2024);
+        const res = await f1Service.getConstructorsChampionship(season);
         setConstructors(res.data);
       } catch (err) {
         console.error(err);
@@ -27,7 +29,7 @@ const TeamWinsPieChart = () => {
     };
 
     fetchData();
-  }, []);
+  }, [season]);
   const chartData = constructors
     .filter((team) => team.wins > 0)
     .map((team, index) => ({
