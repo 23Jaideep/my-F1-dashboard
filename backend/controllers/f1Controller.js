@@ -477,17 +477,29 @@ const circuitDoc = await Circuit.findOneAndUpdate(
   }
 }
 
+            // Clear Redis cache for this season
+      await Promise.all([
+          redisClient.del(`constructors:${season}`),
+          redisClient.del(`drivers:${season}`),
+          redisClient.del(`races:${season}`)
+      ]);
+
+      const practiceKeys = await redisClient.keys(`practice:${season}:*`);
+      if (practiceKeys.length > 0) {
+          await redisClient.del(practiceKeys);
+      }
+
       if (errors.length > 0) {
-        res.status(207).json({
-          status: "partial success",
-          message: `F1 data for season ${season} inserted with some failures`,
-          errors: errors,
-        });
+          res.status(207).json({
+              status: "partial success",
+              message: `F1 data for season ${season} inserted with some failures`,
+              errors: errors,
+          });
       } else {
-        res.json({
-          status: "success",
-          message: `F1 data for season ${season} inserted successfully`,
-        });
+          res.json({
+              status: "success",
+              message: `F1 data for season ${season} inserted successfully`,
+          });
       }
     } catch (error) {
       console.error("Error inserting F1 data:", error.message);
